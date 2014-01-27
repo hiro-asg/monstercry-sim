@@ -15,6 +15,11 @@ class Skill:
         self.heal = 0
         self.attack_up = 0
 
+    def ready(self):
+        self.active = 0
+        self.wait = 0
+        self.used = 0
+
     def use(self):
         self.active = self.duration
         self.wait   = self.cool_time
@@ -34,7 +39,7 @@ class Skill:
             return 0
 
         if self.active > 0:
-            adjust = 0.5 if self.used >= 5 else 1 - self.used * 0.1
+            adjust = 0.5 if self.used >= 6 else 1.1 - self.used * 0.1
             return self.defense * adjust
 
         return 0
@@ -44,7 +49,7 @@ class Skill:
             return 0
 
         if self.active > 0:
-            adjust = 0.5 if self.used >= 5 else 1 - self.used * 0.1
+            adjust = 0.5 if self.used >= 6 else 1.1 - self.used * 0.1
             return self.heal * adjust
 
         return 0

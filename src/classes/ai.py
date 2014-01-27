@@ -1,5 +1,6 @@
-from src.const import *
+# coding=utf-8
 
+from src.const import *
 
 class Ai:
     def __init__(self):
@@ -11,12 +12,30 @@ class Ai:
         self._priorities = [self._priority_1, self._priority_2, self._priority_3, self._priority_4]
         self.defense_ratio = 0
 
-    def set_priorities(self, priority_1, priority_2, priority_3, priority_4):
+    def get_priority_name(self):
+        message = ""
+        for i in range(len(self._priorities)):
+            if message != "":
+                message += ">"
+            if self._priorities[i] == ACT_ATTACK:
+                message += u"攻撃"
+            elif self._priorities[i] == ACT_SKILL_1:
+                message += u"スキル１"
+            elif self._priorities[i] == ACT_SKILL_2:
+                message += u"スキル２"
+            elif self._priorities[i] == ACT_DEFENSE:
+                message += u"ディフェンス"
+        return message
+
+    def set_priorities_each(self, priority_1, priority_2, priority_3, priority_4):
         self._priority_1 = priority_1
         self._priority_2 = priority_2
         self._priority_3 = priority_3
         self._priority_4 = priority_4
         self._priorities = [priority_1, priority_2, priority_3, priority_4]
+
+    def set_priorities(self, priorities):
+        self.set_priorities_each(priorities[0], priorities[1], priorities[2], priorities[3])
 
     def choose_action(self, actions, skill_1, skill_2, defense_ratio):
         action = None
@@ -109,7 +128,7 @@ class Ai:
                 action.type = TYPE_DISCARD
                 action.act = ACT_SKILL_1
                 action.icon = ICON_INDEX[ACT_SKILL_1]
-                action.quantity = 3 if actions[ICON_INDEX[ACT_SKILL_1]] < 3 else actions[ICON_INDEX[ACT_SKILL_1]]
+                action.quantity = 3 if actions[ICON_INDEX[ACT_SKILL_1]] > 3 else actions[ICON_INDEX[ACT_SKILL_1]]
                 return action
 
             if priority == ACT_SKILL_2:
@@ -117,7 +136,7 @@ class Ai:
                 action.type = TYPE_DISCARD
                 action.act = ACT_SKILL_2
                 action.icon = ICON_INDEX[ACT_SKILL_2]
-                action.quantity = 3 if actions[ICON_INDEX[ACT_SKILL_2]] < 3 else actions[ICON_INDEX[ACT_SKILL_2]]
+                action.quantity = 3 if actions[ICON_INDEX[ACT_SKILL_2]] > 3 else actions[ICON_INDEX[ACT_SKILL_2]]
                 return action
 
             if priority == ACT_DEFENSE:
@@ -125,7 +144,7 @@ class Ai:
                 action.type = TYPE_DISCARD
                 action.act = ACT_DEFENSE
                 action.icon = ICON_INDEX[ACT_DEFENSE]
-                action.quantity = 3 if actions[ICON_INDEX[ACT_DEFENSE]] < 3 else actions[ICON_INDEX[ACT_DEFENSE]]
+                action.quantity = 3 if actions[ICON_INDEX[ACT_DEFENSE]] > 3 else actions[ICON_INDEX[ACT_DEFENSE]]
                 return action
 
     @staticmethod
@@ -134,10 +153,10 @@ class Ai:
 
         if attack >= 2:
             action = Action()
-            action.action = ACT_ATTACK
+            action.act = ACT_ATTACK
+            action.icon = ICON_INDEX[ACT_ATTACK]
             action.quantity = 2
             return action
-
         return None
 
     def _choose_saving_action(self, actions, defense_ratio):
@@ -147,10 +166,10 @@ class Ai:
             if actions[ICON_INDEX[ACT_DEFENSE]] >= 1 \
                 and defense_ratio <= self.defense_ratio:
                 action = Action()
-                action.action = ACT_DEFENSE
+                action.act = ACT_DEFENSE
+                action.icon = ICON_INDEX[ACT_DEFENSE]
                 action.quantity = 1
                 return action
-
         return None
 
 

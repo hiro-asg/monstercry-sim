@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 #!-*- coding:utf-8 -*-
+import copy
 
 import random
 from src.classes.ai import Ai
 from src.classes.creature import Creature
 from src.classes.equipment import Equipment
+from src.classes.passive_skill import InfernaSkill, PassiveSkill, FioraSkill
 from src.classes.skill import Skill
 from src.classes.status import Status
 from src.const import *
-from src.creature_action_recorder import CreatureActionRecoder
+from src.battle_result_recorder import BattleResultRecoder
 
 
 class BattleSimulation:
@@ -16,8 +18,10 @@ class BattleSimulation:
         self._statistics = False
         pass
 
-    @staticmethod
-    def _create_creature(creature_id, skill_1, skill_2, status, equipment, ai):
+    def set_statistics(self):
+        self._statistics = True
+
+    def _create_creature(self, creature_id, skill_1, skill_2, status, equipment, ai):
 
         def set_skill(target_skill, target_skill_data):
             target_skill.name = target_skill_data["name"]
@@ -54,7 +58,7 @@ class BattleSimulation:
         passive_skill_data = Const.PASSIVE_SKILL[creature_id]
         if passive_skill_data:
             if passive_skill_data["special_skill"]:
-                passive_skill = Const
+                passive_skill = self._get_special_skill(creature_id)
             else:
                 passive_skill = PassiveSkill()
             passive_skill.name = passive_skill_data["name"]
@@ -96,71 +100,246 @@ class BattleSimulation:
         return creature
 
     def start_duel(self, handler):
-        #OWNER
-        status = Status()
-        status.life = 280
-        status.attack = 215
-        status.defense = 0
-        status.bonus = 0
 
-        equipment = Equipment()
-        equipment.life = 11325
-        equipment.attack = 2775
-        equipment.defense = 0
-        equipment.bonus = 372
+        if self._statistics:
+            opponent_list = []
 
-        ai = Ai()
-        ai.type = AI_TECHNICAL
-        ai.set_priorities(ACT_SKILL_2, ACT_SKILL_1, ACT_ATTACK, ACT_DEFENSE)
+            #OPPONENT
+            status2 = Status()
+            status2.life = Const.MODEL_ATTACK["status"][3]["life"]
+            status2.attack = Const.MODEL_ATTACK["status"][3]["attack"]
+            status2.defense = Const.MODEL_ATTACK["status"][3]["defense"]
+            status2.bonus = Const.MODEL_ATTACK["status"][3]["bonus"]
 
-        owner = self._create_creature("imelda", "knife_throwing", "boomerang", status, equipment, ai)
+            equipment2 = Equipment()
+            equipment2.life = Const.MODEL_ATTACK["equipment"][0]["life"]
+            equipment2.attack = Const.MODEL_ATTACK["equipment"][0]["attack"]
+            equipment2.defense = Const.MODEL_ATTACK["equipment"][0]["defense"]
+            equipment2.bonus = Const.MODEL_ATTACK["equipment"][0]["bonus"]
 
-        #OPPONENT
-        status = Status()
-        status.life = 200
-        status.attack = 295
-        status.defense = 0
-        status.bonus = 0
+            ai2 = Ai()
+            ai2.type = Const.MODEL_ATTACK["ai"][0]
+            ai2.set_priorities(Const.MODEL_ATTACK["priorities"])
+            ai2.defense_ratio = 0
 
-        equipment = Equipment()
-        equipment.life = 11025
-        equipment.attack = 2670
-        equipment.defense = 0
-        equipment.bonus = 372
+            opponent = self._create_creature("imelda", Const.MODEL_ATTACK["skills"][1][0], Const.MODEL_ATTACK["skills"][1][1], status2, equipment2, ai2)
+            opponent_list.append(opponent)
 
-        ai = Ai()
-        ai.type = AI_TECHNICAL
-        ai.set_priorities(ACT_SKILL_2, ACT_SKILL_1, ACT_ATTACK, ACT_DEFENSE)
+            #2
+            status2 = Status()
+            status2.life = Const.MODEL_NITEN_BAR["status"][0]["life"]
+            status2.attack = Const.MODEL_NITEN_BAR["status"][0]["attack"]
+            status2.defense = Const.MODEL_NITEN_BAR["status"][0]["defense"]
+            status2.bonus = Const.MODEL_NITEN_BAR["status"][0]["bonus"]
 
-        opponent = self._create_creature("imelda", "knife_throwing", "boomerang", status, equipment, ai)
+            equipment2 = Equipment()
+            equipment2.life = Const.MODEL_NITEN_BAR["equipment"][0]["life"]
+            equipment2.attack = Const.MODEL_NITEN_BAR["equipment"][0]["attack"]
+            equipment2.defense = Const.MODEL_NITEN_BAR["equipment"][0]["defense"]
+            equipment2.bonus = Const.MODEL_NITEN_BAR["equipment"][0]["bonus"]
 
-        handler.response.write(owner.name + "(PLAYER 1) vs " + opponent.name + "(PLAYER 2)</br></br>")
+            ai2 = Ai()
+            ai2.type = Const.MODEL_NITEN_BAR["ai"][0]
+            ai2.set_priorities(Const.MODEL_NITEN_BAR["priorities"])
+            ai2.defense_ratio = 0.9
 
-        handler.response.write(owner.name + "(PLAYER 1):</br>")
-        handler.response.write(u"体力　　：" + str(int(owner.life)) + "</br>")
-        handler.response.write(u"攻撃力　：" + str(int(owner.attack)) + "</br>")
-        handler.response.write(u"防御力　：" + str(int(owner.defense)) + "</br>")
-        handler.response.write(u"ボーナス：" + str(int(owner.bonus)) + "</br>")
-        handler.response.write(u"スキル１：" + owner.skill_1.name + "</br>")
-        handler.response.write(u"スキル２：" + owner.skill_2.name + "</br>")
-        handler.response.write("</br>")
+            opponent = self._create_creature("princess_barbala", Const.MODEL_NITEN_BAR["skills"][0][0], Const.MODEL_NITEN_BAR["skills"][0][1], status2, equipment2, ai2)
+            opponent_list.append(opponent)
 
-        handler.response.write(opponent.name + "(PLAYER 2):</br>")
-        handler.response.write(u"体力　　：" + str(int(opponent.life)) + "</br>")
-        handler.response.write(u"攻撃力　：" + str(int(opponent.attack)) + "</br>")
-        handler.response.write(u"防御力　：" + str(int(opponent.defense)) + "</br>")
-        handler.response.write(u"ボーナス：" + str(int(opponent.bonus)) + "</br>")
-        handler.response.write(u"スキル１：" + opponent.skill_1.name + "</br>")
-        handler.response.write(u"スキル２：" + opponent.skill_2.name + "</br>")
+            #3
+            status2 = Status()
+            status2.life = Const.MODEL_NITEN_CHABANA["status"][0]["life"]
+            status2.attack = Const.MODEL_NITEN_CHABANA["status"][0]["attack"]
+            status2.defense = Const.MODEL_NITEN_CHABANA["status"][0]["defense"]
+            status2.bonus = Const.MODEL_NITEN_CHABANA["status"][0]["bonus"]
 
-        handler.response.write("-------------------------------------------------</br>")
+            equipment2 = Equipment()
+            equipment2.life = Const.MODEL_NITEN_CHABANA["equipment"][0]["life"]
+            equipment2.attack = Const.MODEL_NITEN_CHABANA["equipment"][0]["attack"]
+            equipment2.defense = Const.MODEL_NITEN_CHABANA["equipment"][0]["defense"]
+            equipment2.bonus = Const.MODEL_NITEN_CHABANA["equipment"][0]["bonus"]
 
-        turn = 1
-        while self._fight(handler, owner, opponent, turn):
-            turn += 1
-            pass
+            ai2 = Ai()
+            ai2.type = Const.MODEL_NITEN_CHABANA["ai"][0]
+            ai2.set_priorities(Const.MODEL_NITEN_CHABANA["priorities"])
+            ai2.defense_ratio = 0.9
 
-    def _fight(self, handler, owner, opponent, turn):
+            opponent = self._create_creature("chabana", Const.MODEL_NITEN_CHABANA["skills"][0][0], Const.MODEL_NITEN_CHABANA["skills"][0][1], status2, equipment2, ai2)
+            opponent_list.append(opponent)
+
+            #4
+            status2 = Status()
+            status2.life = Const.MODEL_INFERNA["status"][0]["life"]
+            status2.attack = Const.MODEL_INFERNA["status"][0]["attack"]
+            status2.defense = Const.MODEL_INFERNA["status"][0]["defense"]
+            status2.bonus = Const.MODEL_INFERNA["status"][0]["bonus"]
+
+            equipment2 = Equipment()
+            equipment2.life = Const.MODEL_INFERNA["equipment"][0]["life"]
+            equipment2.attack = Const.MODEL_INFERNA["equipment"][0]["attack"]
+            equipment2.defense = Const.MODEL_INFERNA["equipment"][0]["defense"]
+            equipment2.bonus = Const.MODEL_INFERNA["equipment"][0]["bonus"]
+
+            ai2 = Ai()
+            ai2.type = Const.MODEL_INFERNA["ai"][0]
+            ai2.set_priorities(Const.MODEL_INFERNA["priorities"])
+            ai2.defense_ratio = 0.2
+
+            opponent = self._create_creature("inferna", Const.MODEL_INFERNA["skills"][0][0], Const.MODEL_INFERNA["skills"][0][1], status2, equipment2, ai2)
+            opponent_list.append(opponent)
+
+            #5
+            status2 = Status()
+            status2.life = Const.MODEL_FIORA["status"][0]["life"]
+            status2.attack = Const.MODEL_FIORA["status"][0]["attack"]
+            status2.defense = Const.MODEL_FIORA["status"][0]["defense"]
+            status2.bonus = Const.MODEL_FIORA["status"][0]["bonus"]
+
+            equipment2 = Equipment()
+            equipment2.life = Const.MODEL_FIORA["equipment"][0]["life"]
+            equipment2.attack = Const.MODEL_FIORA["equipment"][0]["attack"]
+            equipment2.defense = Const.MODEL_FIORA["equipment"][0]["defense"]
+            equipment2.bonus = Const.MODEL_FIORA["equipment"][0]["bonus"]
+
+            ai2 = Ai()
+            ai2.type = Const.MODEL_FIORA["ai"][0]
+            ai2.set_priorities(Const.MODEL_FIORA["priorities"])
+            ai2.defense_ratio = 0.2
+
+            opponent = self._create_creature("fiora", Const.MODEL_FIORA["skills"][0][0], Const.MODEL_FIORA["skills"][0][1], status2, equipment2, ai2)
+            opponent_list.append(opponent)
+
+            count = 1
+            for opponent in opponent_list:
+                handler.response.write("</br>")
+                handler.response.write("[" + str(count) + "] " + opponent.name + "</br>")
+                handler.response.write(u"体力　　：" + str(int(opponent.life)) + "</br>")
+                handler.response.write(u"攻撃力　：" + str(int(opponent.attack)) + "</br>")
+                handler.response.write(u"防御力　：" + str(int(opponent.defense)) + "</br>")
+                handler.response.write(u"ボーナス：" + str(int(opponent.bonus)) + "</br>")
+                handler.response.write(u"スキル１：" + opponent.skill_1.name + "</br>")
+                handler.response.write(u"スキル２：" + opponent.skill_2.name + "</br>")
+                handler.response.write(u"AI      ：" + AI_NAME[opponent.ai.type] + "</br>")
+                handler.response.write(u"優先順位：" + opponent.ai.get_priority_name() + "</br>")
+                handler.response.write(u"防御使用：" + str(int(opponent.ai.defense_ratio * 100)) + u"％以下で使用</br>")
+                count += 1
+
+            creature_id = "patricia"
+            model = Const.MODEL_TEST
+
+            ai = Ai()
+            ai.type = model["ai"][0]
+            ai.set_priorities(model["priorities"])
+            ai.defense_ratio = 0.2
+            status = Status()
+            equipment = Equipment()
+            for model_status in model["status"]:
+                status.life = model_status["life"]
+                status.attack = model_status["attack"]
+                status.defense = model_status["defense"]
+                status.bonus = model_status["bonus"]
+                for model_equipment in model["equipment"]:
+                    equipment.life = model_equipment["life"]
+                    equipment.attack = model_equipment["attack"]
+                    equipment.defense = model_equipment["defense"]
+                    equipment.bonus = model_equipment["bonus"]
+                    for model_skill in model["skills"]:
+                        owner = self._create_creature(creature_id, model_skill[0], model_skill[1], status, equipment, ai)
+                        handler.response.write("-----------------------------------------------------------------</br>")
+                        handler.response.write(owner.name + "(PLAYER 1):</br>")
+                        handler.response.write(u"体力　　：" + str(int(owner.life)) + "</br>")
+                        handler.response.write(u"攻撃力　：" + str(int(owner.attack)) + "</br>")
+                        handler.response.write(u"防御力　：" + str(int(owner.defense)) + "</br>")
+                        handler.response.write(u"ボーナス：" + str(int(owner.bonus)) + "</br>")
+                        handler.response.write(u"スキル１：" + owner.skill_1.name + "</br>")
+                        handler.response.write(u"スキル２：" + owner.skill_2.name + "</br>")
+                        handler.response.write(u"AI      ：" + AI_NAME[owner.ai.type] + "</br>")
+                        handler.response.write(u"優先順位：" + owner.ai.get_priority_name() + "</br>")
+                        handler.response.write(u"防御使用：" + str(int(owner.ai.defense_ratio * 100)) + u"％以下で使用</br>")
+                        handler.response.write("</br>")
+
+                        for opponent in opponent_list:
+                            recoder = BattleResultRecoder()
+                            for i in range(200):
+                                while self._fight(handler, owner, opponent, recoder):
+                                    pass
+                                owner.ready()
+                                opponent.ready()
+                            handler.response.write("vs " + opponent.name + ": " + str(recoder.win) + u"勝 " + str(recoder.lose) + u"敗 " + str(recoder.draw) + u"引き分け")
+                            handler.response.write("</br>")
+        else:
+            #OWNER
+            status = Status()
+            status.life = Const.MODEL_TEST["status"][0]["life"]
+            status.attack = Const.MODEL_TEST["status"][0]["attack"]
+            status.defense = Const.MODEL_TEST["status"][0]["defense"]
+            status.bonus = Const.MODEL_TEST["status"][0]["bonus"]
+
+            equipment = Equipment()
+            equipment.life = Const.MODEL_TEST["equipment"][0]["life"]
+            equipment.attack = Const.MODEL_TEST["equipment"][0]["attack"]
+            equipment.defense = Const.MODEL_TEST["equipment"][0]["defense"]
+            equipment.bonus = Const.MODEL_TEST["equipment"][0]["bonus"]
+
+            ai = Ai()
+            ai.type = Const.MODEL_TEST["ai"][0]
+            ai.set_priorities(Const.MODEL_TEST["priorities"])
+            ai.defense_ratio = 0.2
+
+            owner = self._create_creature("patricia", Const.MODEL_TEST["skills"][0][0], Const.MODEL_TEST["skills"][0][1], status, equipment, ai)
+
+            #OPPONENT
+            status = Status()
+            status.life = Const.MODEL_INFERNA["status"][0]["life"]
+            status.attack = Const.MODEL_INFERNA["status"][0]["attack"]
+            status.defense = Const.MODEL_INFERNA["status"][0]["defense"]
+            status.bonus = Const.MODEL_INFERNA["status"][0]["bonus"]
+
+            equipment = Equipment()
+            equipment.life = Const.MODEL_INFERNA["equipment"][0]["life"]
+            equipment.attack = Const.MODEL_INFERNA["equipment"][0]["attack"]
+            equipment.defense = Const.MODEL_INFERNA["equipment"][0]["defense"]
+            equipment.bonus = Const.MODEL_INFERNA["equipment"][0]["bonus"]
+
+            ai = Ai()
+            ai.type = Const.MODEL_INFERNA["ai"][0]
+            ai.set_priorities(Const.MODEL_INFERNA["priorities"])
+            ai.defense_ratio = 0.2
+
+            opponent = self._create_creature("inferna",  Const.MODEL_INFERNA["skills"][0][0], Const.MODEL_INFERNA["skills"][0][1], status, equipment, ai)
+
+            handler.response.write(owner.name + "(PLAYER 1) vs " + opponent.name + "(PLAYER 2)</br></br>")
+
+            handler.response.write(owner.name + "(PLAYER 1):</br>")
+            handler.response.write(u"体力　　：" + str(int(owner.life)) + "</br>")
+            handler.response.write(u"攻撃力　：" + str(int(owner.attack)) + "</br>")
+            handler.response.write(u"防御力　：" + str(int(owner.defense)) + "</br>")
+            handler.response.write(u"ボーナス：" + str(int(owner.bonus)) + "</br>")
+            handler.response.write(u"スキル１：" + owner.skill_1.name + "</br>")
+            handler.response.write(u"スキル２：" + owner.skill_2.name + "</br>")
+            handler.response.write(u"AI      ：" + AI_NAME[owner.ai.type]  + "</br>")
+            handler.response.write(u"優先順位：" + owner.ai.get_priority_name() + "</br>")
+            handler.response.write(u"防御使用：" + str(int(owner.ai.defense_ratio * 100)) + u"％以下で使用</br>")
+            handler.response.write("</br>")
+
+            handler.response.write(opponent.name + "(PLAYER 2):</br>")
+            handler.response.write(u"体力　　：" + str(int(opponent.life)) + "</br>")
+            handler.response.write(u"攻撃力　：" + str(int(opponent.attack)) + "</br>")
+            handler.response.write(u"防御力　：" + str(int(opponent.defense)) + "</br>")
+            handler.response.write(u"ボーナス：" + str(int(opponent.bonus)) + "</br>")
+            handler.response.write(u"スキル１：" + opponent.skill_1.name + "</br>")
+            handler.response.write(u"スキル２：" + opponent.skill_2.name + "</br>")
+            handler.response.write(u"AI      ：" + AI_NAME[opponent.ai.type]  + "</br>")
+            handler.response.write(u"優先順位：" + opponent.ai.get_priority_name() + "</br>")
+            handler.response.write(u"防御使用：" + str(int(opponent.ai.defense_ratio * 100)) + u"％以下で使用</br>")
+
+            handler.response.write("-------------------------------------------------</br>")
+
+            recoder = BattleResultRecoder()
+            while self._fight(handler, owner, opponent, recoder):
+                pass
+
+    def _fight(self, handler, owner, opponent, recoder):
 
         def get_supplied_icon_log(creature):
             ret = ""
@@ -194,10 +373,6 @@ class BattleSimulation:
             handler.response.write(self._enclose(str_used_icons))
             handler.response.write("</br>")
 
-        if turn == 1:
-            owner_recorder = CreatureActionRecoder()
-            opponent_recorder = CreatureActionRecoder()
-
         self._supply_icons(owner)
         self._supply_icons(opponent)
 
@@ -214,7 +389,7 @@ class BattleSimulation:
 
         self._reflect_action_result(handler, owner, opponent)
 
-        return self._turn_end(handler, owner, ROLE_1, opponent, ROLE_2)
+        return self._turn_end(handler, owner, ROLE_1, opponent, ROLE_2, recoder)
 
     def _supply_icons(self, creature):
         for i in range(3):
@@ -244,7 +419,7 @@ class BattleSimulation:
         return None
 
     def _reflect_action_result(self, handler, owner, opponent):
-        def write_action_log(creature, role):
+        def write_action_log(creature, target, role):
             def write_heal_log():
                 if creature.skill_1.get_skill_heal() > 0 and creature.skill_1.active > 0:
                     skill_effect_remain_message = ""
@@ -272,14 +447,14 @@ class BattleSimulation:
                         creature.name + self._enclose(role) + u"：[スキル(" + creature.skill_2.name + ")] " + str(
                             creature.skill_2.get_skill_defense()) + u" 防御値上昇。</br>")
                 else:
-                    handler.response.write(creature.name + self._enclose(role) + u"：[防御]" + str(
+                    handler.response.write(creature.name + self._enclose(role) + u"：[防御] " + str(
                         creature.action_result.defense) + u" 防御値上昇。</br>")
 
             def write_attack_log():
-                damage = int(opponent.passive_skill.get_decreased_damage(creature.action_result.attack_damage))
+                damage = int(target.passive_skill.get_decreased_damage(creature.action_result.attack_damage))
                 damage_resist_message = self._enclose(u"ダメージ減:" + str(
                     creature.action_result.attack_damage - damage)) if creature.action_result.attack_damage - damage > 0 else ""
-                handler.response.write(creature.name + self._enclose(role) + u"：[攻撃]" + str(
+                handler.response.write(creature.name + self._enclose(role) + u"：[攻撃] " + str(
                     creature.action_result.attack_damage) + damage_resist_message + u" ダメージ。</br>")
 
             def write_skill_damage_log():
@@ -289,7 +464,8 @@ class BattleSimulation:
                         skill_effect_remain_message = u"（効果残り " + str(creature.skill_1.active - 1) + u" ターン）"
                     handler.response.write(
                         creature.name + self._enclose(role) + u"：[スキル(" + creature.skill_1.name + ")] " + str(
-                            creature.skill_1.get_skill_damage()) + u" ダメージ。" + skill_effect_remain_message + "</br>")
+                            int(creature.passive_skill.get_increased_skill_damage(creature.skill_1.get_skill_damage())))
+                        + u" ダメージ。" + skill_effect_remain_message + "</br>")
 
                 if creature.skill_2.get_skill_damage() > 0 and creature.skill_2.active > 0:
                     skill_effect_remain_message = ""
@@ -297,34 +473,35 @@ class BattleSimulation:
                         skill_effect_remain_message = u"（効果残り " + str(creature.skill_2.active - 1) + u" ターン）"
                     handler.response.write(
                         creature.name + self._enclose(role) + u"：[スキル(" + creature.skill_2.name + ")] " + str(
-                            creature.skill_2.get_skill_damage()) + u" ダメージ。" + skill_effect_remain_message + "</br>")
+                            int(creature.passive_skill.get_increased_skill_damage(creature.skill_2.get_skill_damage())))
+                        + u" ダメージ。" + skill_effect_remain_message + "</br>")
 
             def write_damage_up_log():
                 if creature.skill_1.get_skill_attack_up() > 0 and creature.skill_1.active > 0:
                     if creature.skill_1.active == creature.skill_1.duration:
                         handler.response.write(
                             creature.name + self._enclose(role) + u"：[スキル(" + creature.skill_1.name + ")] " + str(
-                                creature.skill_1.get_skill_damage_up()) + u" 攻撃力アップ(次ターンより有効)。</br>")
+                                creature.skill_1.get_skill_attack_up()) + u" 攻撃力アップ(次ターンより有効)。</br>")
                     else:
                         skill_effect_remain_message = ""
                         if creature.skill_1.active > 1:
                             skill_effect_remain_message = u"（効果残り " + str(creature.skill_1.active - 1) + u" ターン）"
                         handler.response.write(
                             creature.name + self._enclose(role) + u"：[スキル(" + creature.skill_1.name + ")] " + str(
-                                creature.skill_1.get_skill_damage_up()) + u" 攻撃力アップ中。" + skill_effect_remain_message + "</br>")
+                                creature.skill_1.get_skill_attack_up()) + u" 攻撃力アップ中。" + skill_effect_remain_message + "</br>")
 
                 if creature.skill_2.get_skill_attack_up() > 0 and creature.skill_2.active > 0:
                     if creature.skill_2.active == creature.skill_2.duration:
                         handler.response.write(
                             creature.name + self._enclose(role) + u"：[スキル(" + creature.skill_2.name + ")] " + str(
-                                creature.skill_2.get_skill_damage_up()) + u" 攻撃力アップ(次ターンより有効)。</br>")
+                                creature.skill_2.get_skill_attack_up()) + u" 攻撃力アップ(次ターンより有効)。</br>")
                     else:
                         skill_effect_remain_message = ""
                         if creature.skill_2.active > 1:
                             skill_effect_remain_message = u"（効果残り " + str(creature.skill_2.active - 1) + u" ターン）"
                         handler.response.write(
                             creature.name + self._enclose(role) + u"：[スキル(" + creature.skill_2.name + ")] " + str(
-                                creature.skill_2.get_skill_damage_up()) + u" 攻撃力アップ中。" + skill_effect_remain_message + "</br>")
+                                creature.skill_2.get_skill_attack_up()) + u" 攻撃力アップ中。" + skill_effect_remain_message + "</br>")
 
             if creature.action_result.heal > 0:
                 write_heal_log()
@@ -343,7 +520,7 @@ class BattleSimulation:
 
         def reflect_action_defense(creature, role):
             if creature.action_result.heal > 0:
-                if creature.current_life > creature.life:
+                if creature.current_life + creature.action_result.heal > creature.life:
                     creature.current_life = creature.life
                 else:
                     creature.current_life += creature.action_result.heal
@@ -381,8 +558,8 @@ class BattleSimulation:
         reflect_action_offence(opponent, owner, ROLE_2)
 
         if not self._statistics:
-            write_action_log(owner, ROLE_1)
-            write_action_log(opponent, ROLE_2)
+            write_action_log(owner, opponent, ROLE_1)
+            write_action_log(opponent, owner, ROLE_2)
 
         if owner.skill_1:
             owner.skill_1.turn_end()
@@ -394,39 +571,59 @@ class BattleSimulation:
         if opponent.skill_2:
             opponent.skill_2.turn_end()
 
-    def _turn_end(self, handler, owner, owner_role, opponent, opponent_role):
+    def _turn_end(self, handler, owner, owner_role, opponent, opponent_role, recoder):
         """
             Returns:
                True: The fight continues
                False: The fight ends
         """
-        handler.response.write(owner.name + self._enclose(owner_role) + u" ― 体力:" + str(int(owner.current_life)) \
-                               + u" 攻撃力:" + str(int(owner.attack + owner.attack_up)) \
-                               + u" 防御力:" + str(int(owner.current_defense)) \
-                               + self._enclose(str(int(owner.current_defense_max))))
-        handler.response.write("</br>")
 
-        handler.response.write(
-            opponent.name + self._enclose(opponent_role) + u" ― 体力:" + str(int(opponent.current_life)) \
-            + u" 攻撃力:" + str(int(opponent.attack + owner.attack_up)) \
-            + u" 防御力:" + str(int(opponent.current_defense)) + self._enclose(str(int(opponent.current_defense_max))))
-        handler.response.write("</br>")
+        if not self._statistics:
+            handler.response.write(owner.name + self._enclose(owner_role) + u" ― 体力:" + str(int(owner.current_life)) \
+                                   + u" 攻撃力:" + str(int(owner.attack + owner.attack_up)) \
+                                   + u" 防御力:" + str(int(owner.current_defense)) \
+                                   + self._enclose(str(int(owner.current_defense_max))))
+            handler.response.write("<br />")
 
+            handler.response.write(
+                opponent.name + self._enclose(opponent_role) + u" ― 体力:" + str(int(opponent.current_life)) \
+                + u" 攻撃力:" + str(int(opponent.attack + owner.attack_up)) \
+                + u" 防御力:" + str(int(opponent.current_defense)) + self._enclose(str(int(opponent.current_defense_max))))
+            handler.response.write("<br />")
+
+        message = ""
         if owner.current_life <= 0:
-            handler.response.write("</br>")
             if opponent.current_life <= 0:
-                handler.response.write("引き分け")
+                recoder.draw += 1
+                message += u"引き分け"
             else:
-                handler.response.write("負け")
-            return False
+                recoder.lose += 1
+                message += u"負け"
         elif opponent.current_life <= 0:
-            handler.response.write("</br>")
-            handler.response.write("勝ち")
-            return False
+            recoder.win += 1
+            message += u"勝ち"
 
-        handler.response.write("</br>")
+        if message == "":
+            if not self._statistics:
+                handler.response.write("<br />")
+        else:
+            if not self._statistics:
+                handler.response.write(message)
+            return False
 
         return True
+
+    @staticmethod
+    def _get_special_skill(creature_id):
+        if creature_id == "inferna":
+            return InfernaSkill()
+        elif creature_id == "lucifer":
+            #FIXME
+            return PassiveSkill()
+        elif creature_id == "fiora":
+            return FioraSkill()
+        else:
+            raise Exception("The special skill is not found. id : " + creature_id)
 
     @staticmethod
     def _enclose(message):

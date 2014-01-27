@@ -3,6 +3,7 @@
 
 from src.const import *
 
+
 class Creature:
     def __init__(self):
         #Basic status
@@ -214,6 +215,19 @@ class Creature:
 
         self.validate()
 
+        self.attack_use = 0
+        self.defense_use = 0
+        self.action_icons = ActionIcons()
+
+        if self.passive_skill:
+            self.passive_skill.ready()
+
+        if self.skill_1:
+            self.skill_1.ready()
+
+        if self.skill_2:
+            self.skill_2.ready()
+
         self.life = self.base_life * self.passive_skill.increase_life_percentage \
                     + self.life_point * 50 + self.passive_skill.increase_life \
                     + self.equipment.life
@@ -238,8 +252,9 @@ class Creature:
             else:
                 return 1 - self.defense_use * 0.1
 
-        self._action = self.ai.choose_action(self.action_icons.get_icons_list(), self.skill_1, self.skill_2, self.current_defense / self.defense)
+        self._action = self.ai.choose_action(self.action_icons.get_icons_list(), self.skill_1, self.skill_2, float(self.current_defense) / self.defense)
 
+        self.passive_skill.before_skill_action(self, self._action.icon)
         action_result = ActionResult()
         if self._action.type == TYPE_DISCARD:
             if self._action.icon == ICON_DEFENSE:
@@ -287,7 +302,9 @@ class Creature:
             action_result.heal += self.skill_2.get_skill_heal()
             if self.skill_2.get_skill_defense() > 0:
                 action_result.defense = self.skill_2.get_skill_defense()
-            action_result.attack_up += self.skill_1.get_skill_attack_up()
+            action_result.attack_up += self.skill_2.get_skill_attack_up()
+
+        self.passive_skill.after_skill_action(self, self._action.icon)
 
         self.action_result = action_result
 
@@ -297,13 +314,18 @@ class Creature:
         if not self.passive_skill:
             raise CreateCreatureException("Passive skill is None.")
 
-    def _get_attack_rate(self, icon_num):
+    @staticmethod
+    def _get_attack_rate(icon_num):
         if icon_num <= 1:
             return 0.5
         return 1
 
-    def _get_bonus_rate(self, icon_num):
+    @staticmethod
+    def _get_bonus_rate(icon_num):
+        if icon_num == 1:
+            return 0
         return 2 ** (icon_num - 1)
+
 
 class ActionResult:
     def __init__(self):
@@ -312,6 +334,7 @@ class ActionResult:
         self.heal    = 0
         self.defense = 0
         self.attack_up = 0
+
 
 class ActionIcons:
     def __init__(self):
@@ -327,6 +350,7 @@ class ActionIcons:
         for val in self.get_icons_list():
             sum += val
         return sum
+
 
 class CreateCreatureException(Exception):
     pass
